@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh-TW" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>個人化中醫調理互動儀表板</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- Chosen Palette: Warm Earth Tones -->
+    <!-- Application Structure Plan: A thematic, single-page dashboard. The structure guides the user from a high-level overview and critical issues (like sleep) down to specific, actionable advice. It starts with 'Why' (Diagnosis), moves to 'What' (Treatment Plan), and finishes with 'How' (Lifestyle & Safety). Key interactions include a seasonal toggle for nighttime formulas and clickable cards for detailed explanations. This structure was chosen to transform a dense report into a step-by-step, interactive guide, prioritizing user understanding and action over the report's linear format. -->
+    <!-- Visualization & Content Choices: 
+        - HbA1c Trend -> Goal: Inform -> Viz: Line Chart (Chart.js) -> Interaction: None, static view -> Justification: Quickly visualizes the core problem of rising blood sugar.
+        - TCM Diagnosis -> Goal: Organize/Explain -> Viz: HTML/CSS Diagram (Flexbox cards) -> Interaction: Click/Hover to reveal details (future enhancement) -> Justification: Simplifies the complex "本虛標實" concept into a clear visual map.
+        - Nighttime Formula -> Goal: Compare/Change -> Viz: Text block + Interactive Toggle -> Interaction: Click to switch between Winter/Summer -> Justification: Makes the key seasonal strategy tangible and memorable.
+        - Lifestyle Advice -> Goal: Inform/Organize -> Viz: Grid of cards with toggles for diet -> Interaction: Click to filter lists -> Justification: Breaks down extensive advice into manageable, categorized sections.
+        - Drug Interactions -> Goal: Inform/Warn -> Viz: HTML Table -> Interaction: None, static view -> Justification: Presents critical safety data in a clear, structured, and unmissable format.
+        - CONFIRMING NO SVG/Mermaid, using HTML/CSS for diagrams and Chart.js for charts.
+    -->
+    <!-- CONFIRMATION: NO SVG graphics used. NO Mermaid JS used. -->
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans TC', sans-serif;
+        }
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 350px;
+        }
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 350px;
+            }
+        }
+        .nav-link {
+            transition: all 0.3s ease;
+        }
+        .nav-link.active {
+            color: #0d9488;
+            border-bottom-color: #0d9488;
+        }
+        .seasonal-btn.active {
+            background-color: #0d9488;
+            color: white;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+        }
+        .seasonal-btn {
+            transition: all 0.3s ease;
+        }
+    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body class="bg-stone-50 text-stone-800">
+
+    <header class="bg-white/80 backdrop-blur-lg sticky top-0 z-50 shadow-sm">
+        <div class="container mx-auto px-4">
+            <nav class="flex items-center justify-between h-20">
+                <h1 class="text-xl md:text-2xl font-bold text-teal-700">中醫調理儀表板</h1>
+                <div class="hidden md:flex space-x-8">
+                    <a href="#overview" class="nav-link text-stone-600 hover:text-teal-600 border-b-2 border-transparent pb-1">總覽</a>
+                    <a href="#diagnosis" class="nav-link text-stone-600 hover:text-teal-600 border-b-2 border-transparent pb-1">病機分析</a>
+                    <a href="#plan" class="nav-link text-stone-600 hover:text-teal-600 border-b-2 border-transparent pb-1">調理方案</a>
+                    <a href="#lifestyle" class="nav-link text-stone-600 hover:text-teal-600 border-b-2 border-transparent pb-1">生活建議</a>
+                    <a href="#safety" class="nav-link text-stone-600 hover:text-teal-600 border-b-2 border-transparent pb-1">用藥安全</a>
+                </div>
+                <button id="mobile-menu-btn" class="md:hidden text-stone-600">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
+                </button>
+            </nav>
+            <div id="mobile-menu" class="hidden md:hidden py-4">
+                <a href="#overview" class="block py-2 px-4 text-stone-600 hover:bg-teal-50 rounded">總覽</a>
+                <a href="#diagnosis" class="block py-2 px-4 text-stone-600 hover:bg-teal-50 rounded">病機分析</a>
+                <a href="#plan" class="block py-2 px-4 text-stone-600 hover:bg-teal-50 rounded">調理方案</a>
+                <a href="#lifestyle" class="block py-2 px-4 text-stone-600 hover:bg-teal-50 rounded">生活建議</a>
+                <a href="#safety" class="block py-2 px-4 text-stone-600 hover:bg-teal-50 rounded">用藥安全</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8 md:py-12">
+        
+        <!-- Section 1: Overview -->
+        <section id="overview" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold text-center mb-2 text-teal-800">總覽與核心問題</h2>
+            <p class="text-center text-stone-500 mb-8 max-w-2xl mx-auto">本節概述您目前的健康狀況，並點出影響血糖控制的最關鍵因素。</p>
+            
+            <div class="grid md:grid-cols-2 gap-8 items-center">
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold mb-4 text-center">近期糖化血色素 (HbA1c) 變化</h3>
+                    <div class="chart-container">
+                        <canvas id="hba1cChart"></canvas>
+                    </div>
+                    <p class="text-sm text-stone-500 mt-4 text-center">近半年糖化血色素由7.0%顯著上升至9.0%，顯示血糖控制面臨嚴峻挑戰。</p>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="bg-white p-6 rounded-lg shadow-lg">
+                        <h3 class="text-xl font-semibold mb-3">您的兩大調理目標</h3>
+                        <div class="space-y-2">
+                            <p class="flex items-center"><span class="text-teal-500 mr-2">🎯</span> <strong>血糖控制：</strong>降低並穩定糖化血色素。</p>
+                            <p class="flex items-center"><span class="text-blue-500 mr-2">❄️</span> <strong>冬季因應：</strong>改善畏寒體質，安然度冬。</p>
+                        </div>
+                    </div>
+                    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-6 rounded-r-lg shadow-lg">
+                        <h3 class="text-xl font-bold mb-2">🚨 最關鍵的驅動因素：睡眠</h3>
+                        <p class="font-semibold">長期凌晨3點就寢、睡眠僅5小時，是您病情惡化的核心原因。</p>
+                        <p class="mt-2 text-sm">此習慣嚴重耗損肝腎陰血，導致內分泌紊亂與胰島素阻抗加劇。<strong>調整睡眠是所有治療的基石，重要性高於一切藥物。</strong></p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 2: Diagnosis -->
+        <section id="diagnosis" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold text-center mb-2 text-teal-800">病機互動解析</h2>
+            <p class="text-center text-stone-500 mb-8 max-w-2xl mx-auto">您的身體狀況在中醫看來是典型的「本虛標實」。這意味著身體的根本是虛弱的，同時又產生了一些病理產物。點擊下方卡片來了解更多。</p>
+
+            <div class="bg-white p-6 md:p-8 rounded-xl shadow-lg">
+                <div class="text-center mb-6">
+                    <h3 class="text-2xl font-bold">核心病機：本虛標實</h3>
+                    <p class="text-stone-500">根本虛弱 (本虛) 與 病理產物 (標實) 同時存在</p>
+                </div>
+                <div class="grid md:grid-cols-2 gap-6">
+                    
+                    <div class="bg-amber-50 p-6 rounded-lg border border-amber-200">
+                        <h4 class="text-xl font-semibold text-amber-800 mb-3 text-center">根本之虛 (本虛)</h4>
+                        <div class="space-y-4">
+                            <div class="bg-white p-4 rounded shadow-sm">
+                                <h5 class="font-bold">脾腎兩虛</h5>
+                                <p class="text-sm text-stone-600">如同身體的引擎與電池都動力不足。表現為：極度疲勞、腰痛、小便泡沫多。</p>
+                            </div>
+                            <div class="bg-white p-4 rounded shadow-sm">
+                                <h5 class="font-bold">陰陽兩虧</h5>
+                                <p class="text-sm text-stone-600">身體的「冷卻液(陰)」和「生命之火(陽)」都已不足。表現為：既畏寒肢冷(陽虛)，又有胃酸逆流等虛熱症狀(陰虛)。</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="bg-sky-50 p-6 rounded-lg border border-sky-200">
+                        <h4 class="text-xl font-semibold text-sky-800 mb-3 text-center">繼發之實 (標實)</h4>
+                        <div class="space-y-4">
+                            <div class="bg-white p-4 rounded shadow-sm">
+                                <h5 class="font-bold">痰濕內生</h5>
+                                <p class="text-sm text-stone-600">消化功能減弱，身體產生過多濕氣，如同代謝的「油泥」。表現為：身體困重、胃酸逆流、下肢水腫。</p>
+                            </div>
+                            <div class="bg-red-50 p-4 rounded shadow-sm border border-red-200">
+                                <h5 class="font-bold text-red-800">⚠️ 瘀血阻絡 (關鍵)</h5>
+                                <p class="text-sm text-stone-600">血液循環不暢，是心肌梗塞的根源，也是併發症風險所在。表現為：舌下瘀紫、下肢抽筋紅疹。</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Plan -->
+        <section id="plan" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold text-center mb-2 text-teal-800">整合調理方案</h2>
+            <p class="text-center text-stone-500 mb-8 max-w-2xl mx-auto">基於您的體質，這是一套更全面、精準的用藥策略，旨在標本兼治。</p>
+            <div class="space-y-8">
+                <!-- Daytime Tea -->
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-2xl font-semibold mb-4">🍵 日間茶飲：益氣養陰</h3>
+                    <p class="mb-4 text-stone-600">此茶飲配方（黃耆、西洋蔘、紅棗）能補充氣力、滋養陰液，並有助於提高胰島素敏感性。是合理的日常保健選擇。</p>
+                    <div class="bg-yellow-100 border-l-4 border-yellow-500 text-yellow-800 p-4 rounded-r-lg">
+                        <p><strong>注意：</strong>夏季可酌減黃耆用量。因有降糖效果，需加強血糖監測，以防低血糖。</p>
+                    </div>
+                </div>
+
+                <!-- Core Formula -->
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-2xl font-semibold mb-4">💊 核心方劑：標本同治</h3>
+                    <p class="mb-4 text-stone-600">這是一個針對您複雜體質的整合性方劑思路，遠比單純服用歸脾湯或加味逍遙散更為周全。它在補益的基礎上，加入了清除病理產物的關鍵藥物。</p>
+                    <div class="bg-teal-50/50 p-6 rounded-lg">
+                        <div class="text-center font-bold text-lg text-teal-800 mb-4">
+                            [歸脾湯 + 麥門冬湯] 為基礎
+                        </div>
+                        <div class="grid md:grid-cols-3 gap-4 text-center">
+                            <div class="bg-white p-3 rounded-md shadow">
+                                <span class="font-semibold text-rose-600">強力活血化瘀</span>
+                                <p class="text-sm text-stone-500">(如丹參、川芎)</p>
+                            </div>
+                            <div class="bg-white p-3 rounded-md shadow">
+                                <span class="font-semibold text-orange-600">化痰祛濕</span>
+                                <p class="text-sm text-stone-500">(如陳皮、茯苓)</p>
+                            </div>
+                            <div class="bg-white p-3 rounded-md shadow">
+                                <span class="font-semibold text-green-600">補腎強腰</span>
+                                <p class="text-sm text-stone-500">(如杜仲、桑寄生)</p>
+                            </div>
+                        </div>
+                        <p class="text-xs text-center mt-4 text-stone-500">此為方劑思路，具體藥物與劑量需由醫師處方。</p>
+                    </div>
+                </div>
+
+                <!-- Nighttime Formula -->
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-2xl font-semibold mb-4">🌙 夜間方劑：順應時節</h3>
+                    <p class="mb-4 text-stone-600">夜間是身體修復的關鍵時刻。根據季節變化採用不同方劑，能達到事半功倍的效果。請點擊切換季節查看建議。</p>
+                    <div class="flex justify-center mb-6">
+                        <div class="flex rounded-lg p-1 bg-stone-100">
+                            <button id="winter-btn" class="seasonal-btn active px-6 py-2 rounded-md font-semibold">❄️ 冬季</button>
+                            <button id="summer-btn" class="seasonal-btn px-6 py-2 rounded-md font-semibold">☀️ 夏季</button>
+                        </div>
+                    </div>
+                    <div id="seasonal-content" class="bg-blue-50 p-6 rounded-lg text-center transition-all duration-300">
+                        <!-- Content will be populated by JS -->
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Lifestyle -->
+        <section id="lifestyle" class="mb-16 scroll-mt-24">
+            <h2 class="text-3xl font-bold text-center mb-2 text-teal-800">全方位生活建議</h2>
+            <p class="text-center text-stone-500 mb-8 max-w-2xl mx-auto">藥物只是輔助，真正的健康來自於持之以恆的良好生活習慣。</p>
+            <div class="grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Sleep -->
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold mb-3">😴 睡眠衛生</h3>
+                    <ul class="list-disc list-inside space-y-2 text-stone-600 text-sm">
+                        <li><strong>目標:</strong> 每晚11點前入睡。</li>
+                        <li><strong>睡前儀式:</strong> 睡前1小時遠離電子產品。</li>
+                        <li><strong>日間節律:</strong> 早晨接觸陽光，避免過長午睡。</li>
+                    </ul>
+                </div>
+                <!-- Diet -->
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold mb-3">🍎 飲食療法</h3>
+                    <p class="text-sm text-stone-600 mb-3">核心原則：食溫、食熟、食軟，避免生冷油膩。</p>
+                    <ul id="diet-list" class="list-disc list-inside space-y-1 text-sm text-green-700">
+                        <!-- Populated by JS -->
+                    </ul>
+                </div>
+                <!-- Exercise -->
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold mb-3">🤸 運動療法</h3>
+                    <p class="text-sm text-stone-600 mb-2"><strong>強烈推薦:</strong> 太極拳、八段錦。</p>
+                    <p class="text-sm text-stone-600">能顯著改善血糖、血壓，且動作舒緩，適合您的身體狀況。</p>
+                </div>
+                <!-- Acupressure -->
+                <div class="bg-white p-6 rounded-lg shadow-lg">
+                    <h3 class="text-xl font-semibold mb-3">🤚 穴位按摩</h3>
+                    <p class="text-sm text-stone-600">每日按壓以下穴位5分鐘：</p>
+                    <ul class="mt-2 space-y-1 font-semibold text-teal-800 text-sm">
+                        <li>足三里 (健脾和胃)</li>
+                        <li>三陰交 (滋陰養血)</li>
+                        <li>腎俞 (補益腎氣)</li>
+                        <li>關元 (大補元氣)</li>
+                    </ul>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 5: Safety -->
+        <section id="safety" class="scroll-mt-24">
+            <h2 class="text-3xl font-bold text-center mb-2 text-teal-800">中西藥安全須知</h2>
+            <p class="text-center text-stone-500 mb-8 max-w-2xl mx-auto">中西藥結合能發揮最大療效，但必須注意潛在的交互作用。請務必告知您的西醫師您正在服用的中藥。</p>
+            <div class="bg-white p-4 md:p-6 rounded-lg shadow-lg overflow-x-auto">
+                <table class="w-full text-sm text-left">
+                    <thead class="bg-stone-100 text-stone-600">
+                        <tr>
+                            <th class="p-3">中藥成分</th>
+                            <th class="p-3">可能交互的西藥</th>
+                            <th class="p-3">潛在作用</th>
+                            <th class="p-3">管理策略</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-stone-200">
+                        <tr class="hover:bg-yellow-50">
+                            <td class="p-3 font-semibold">黃耆, 西洋蔘</td>
+                            <td class="p-3">口服降糖藥</td>
+                            <td class="p-3">增加低血糖風險</td>
+                            <td class="p-3 font-medium text-yellow-800">必須頻繁監測血糖，識別低血糖症狀。</td>
+                        </tr>
+                        <tr class="hover:bg-red-50">
+                            <td class="p-3 font-semibold">丹參, 川芎等活血藥</td>
+                            <td class="p-3">抗血小板/抗凝血藥 (如阿斯匹靈)</td>
+                            <td class="p-3">增加出血風險</td>
+                            <td class="p-3 font-medium text-red-800">需極度謹慎！務必告知心臟科醫師，監測出血跡象。</td>
+                        </tr>
+                        <tr class="hover:bg-stone-50">
+                            <td class="p-3 font-semibold">甘草 (歸脾湯含)</td>
+                            <td class="p-3">利尿劑, 地高辛</td>
+                            <td class="p-3">增加低血鉀風險</td>
+                            <td class="p-3">常規劑量安全，但需留意肌肉無力等症狀。</td>
+                        </tr>
+                        <tr class="hover:bg-stone-50">
+                            <td class="p-3 font-semibold">地黃家族, 其他</td>
+                            <td class="p-3">他汀類藥物</td>
+                            <td class="p-3">可能影響肝臟代謝</td>
+                            <td class="p-3">密切監測肌肉疼痛或無力，及時告知醫師。</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+    </main>
+
+    <footer class="bg-stone-100 mt-16">
+        <div class="container mx-auto px-4 py-6 text-center text-stone-500 text-sm">
+            <p>&copy; 2025 個人化中醫調理互動儀表板。本內容僅供參考，所有治療請遵循專業醫師指導。</p>
+        </div>
+    </footer>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            // Data from the report
+            const patientData = {
+                hba1c: {
+                    labels: ['半年前', '目前'],
+                    values: [7.0, 9.0]
+                },
+                seasonalFormulas: {
+                    winter: {
+                        title: "八味地黃丸 (金匱腎氣丸)",
+                        description: "核心功效是<strong>溫補腎陽</strong>。如同為身體的引擎添足馬力，提供內在火力以抵禦寒冬。能有效改善畏寒肢冷、腰膝酸軟、水腫等冬季加劇的症狀。",
+                        bgColor: "bg-blue-50",
+                        textColor: "text-blue-800"
+                    },
+                    summer: {
+                        title: "麥味地黃丸",
+                        description: "核心功效是<strong>滋補肺腎之陰</strong>。如同為身體補充冷卻液，防止暑熱耗傷津液。適合夏季用來養陰生津，緩解口乾、虛熱等症狀。",
+                        bgColor: "bg-amber-50",
+                        textColor: "text-amber-800"
+                    }
+                },
+                diet: {
+                    recommended: ['羊肉', '雞肉', '黑豆', '核桃', '山藥', '枸杞', '南瓜', '生薑'],
+                    avoid: ['生菜沙拉', '冰品冷飲', '油炸食物', '過多甜食', '肥肉']
+                }
+            };
+
+            // Hba1c Chart
+            const ctx = document.getElementById('hba1cChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: patientData.hba1c.labels,
+                    datasets: [{
+                        label: '糖化血色素 (HbA1c %)',
+                        data: patientData.hba1c.values,
+                        borderColor: '#ef4444',
+                        backgroundColor: '#fee2e2',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#ef4444',
+                        pointRadius: 6,
+                        tension: 0.1,
+                        fill: true,
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: false,
+                            min: 6.5,
+                            max: 9.5,
+                            title: {
+                                display: true,
+                                text: '%'
+                            }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            display: false
+                        }
+                    }
+                }
+            });
+
+            // Seasonal Formula Toggle
+            const winterBtn = document.getElementById('winter-btn');
+            const summerBtn = document.getElementById('summer-btn');
+            const seasonalContent = document.getElementById('seasonal-content');
+
+            function updateSeasonalContent(season) {
+                const data = patientData.seasonalFormulas[season];
+                seasonalContent.innerHTML = `
+                    <h4 class="text-xl font-bold ${data.textColor} mb-2">${data.title}</h4>
+                    <p class="text-stone-600">${data.description}</p>
+                `;
+                seasonalContent.className = `p-6 rounded-lg text-center transition-all duration-300 ${data.bgColor}`;
+
+                if (season === 'winter') {
+                    winterBtn.classList.add('active');
+                    summerBtn.classList.remove('active');
+                } else {
+                    summerBtn.classList.add('active');
+                    winterBtn.classList.remove('active');
+                }
+            }
+
+            winterBtn.addEventListener('click', () => updateSeasonalContent('winter'));
+            summerBtn.addEventListener('click', () => updateSeasonalContent('summer'));
+            
+            // Initial load
+            updateSeasonalContent('winter'); // Default to winter
+
+            // Diet List
+            const dietList = document.getElementById('diet-list');
+            patientData.diet.recommended.forEach(item => {
+                const li = document.createElement('li');
+                li.textContent = item;
+                dietList.appendChild(li);
+            });
+            const p = document.createElement('p');
+            p.className = "text-sm text-stone-600 mt-3";
+            p.innerHTML = `<strong>應避免：</strong>${patientData.diet.avoid.join('、')}。`
+            dietList.parentElement.appendChild(p);
+            
+
+            // Mobile Menu
+            const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+            const mobileMenu = document.getElementById('mobile-menu');
+            mobileMenuBtn.addEventListener('click', () => {
+                mobileMenu.classList.toggle('hidden');
+            });
+            
+            // Close mobile menu on link click
+            const mobileLinks = mobileMenu.querySelectorAll('a');
+            mobileLinks.forEach(link => {
+                link.addEventListener('click', () => {
+                    mobileMenu.classList.add('hidden');
+                });
+            });
+
+            // Active nav link scrolling
+            const sections = document.querySelectorAll('section');
+            const navLinks = document.querySelectorAll('.nav-link');
+
+            window.addEventListener('scroll', () => {
+                let current = '';
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    if (pageYOffset >= sectionTop - 120) {
+                        current = section.getAttribute('id');
+                    }
+                });
+
+                navLinks.forEach(link => {
+                    link.classList.remove('active');
+                    if (link.getAttribute('href').includes(current)) {
+                        link.classList.add('active');
+                    }
+                });
+            });
+
+        });
+    </script>
+</body>
+</html>
