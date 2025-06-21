@@ -67,6 +67,7 @@
                     <a href="#plan" class="nav-link text-stone-600 hover:text-teal-600 border-b-2 border-transparent pb-1">調理方案</a>
                     <a href="#lifestyle" class="nav-link text-stone-600 hover:text-teal-600 border-b-2 border-transparent pb-1">生活建議</a>
                     <a href="#safety" class="nav-link text-stone-600 hover:text-teal-600 border-b-2 border-transparent pb-1">用藥安全</a>
+                    <a href="#links" class="nav-link text-stone-600 hover:text-teal-600 border-b-2 border-transparent pb-1">重要連結</a>
                 </div>
                 <button id="mobile-menu-btn" class="md:hidden text-stone-600">
                     <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path></svg>
@@ -78,6 +79,7 @@
                 <a href="#plan" class="block py-2 px-4 text-stone-600 hover:bg-teal-50 rounded">調理方案</a>
                 <a href="#lifestyle" class="block py-2 px-4 text-stone-600 hover:bg-teal-50 rounded">生活建議</a>
                 <a href="#safety" class="block py-2 px-4 text-stone-600 hover:bg-teal-50 rounded">用藥安全</a>
+                <a href="#links" class="block py-2 px-4 text-stone-600 hover:bg-teal-50 rounded">重要連結</a>
             </div>
         </div>
     </header>
@@ -258,7 +260,7 @@
         </section>
 
         <!-- Section 5: Safety -->
-        <section id="safety" class="scroll-mt-24">
+        <section id="safety" class="mb-16 scroll-mt-24">
             <h2 class="text-3xl font-bold text-center mb-2 text-teal-800">中西藥安全須知</h2>
             <p class="text-center text-stone-500 mb-8 max-w-2xl mx-auto">中西藥結合能發揮最大療效，但必須注意潛在的交互作用。請務必告知您的西醫師您正在服用的中藥。</p>
             <div class="bg-white p-4 md:p-6 rounded-lg shadow-lg overflow-x-auto">
@@ -298,6 +300,19 @@
                         </tr>
                     </tbody>
                 </table>
+            </div>
+        </section>
+
+        <!-- Section 6: Links -->
+        <section id="links" class="scroll-mt-24">
+            <h2 class="text-3xl font-bold text-center mb-2 text-teal-800">重要連結</h2>
+            <p class="text-center text-stone-500 mb-8 max-w-2xl mx-auto">此處提供本儀表板內容所依據的完整分析報告原文，供您參考。</p>
+            <div class="max-w-md mx-auto bg-white p-6 rounded-lg shadow-lg text-center">
+                <h3 class="text-xl font-semibold mb-4">完整中醫調理分析報告</h3>
+                <a href="https://docs.google.com/document/d/1E4vdFLenQ5XZ5KJb-EdtA4gqsJWPK-q_Lu5dvx6wTuw/edit?tab=t.0" target="_blank" rel="noopener noreferrer" class="inline-block bg-teal-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-teal-700 transition-colors duration-300">
+                    點擊此處閱讀完整報告
+                </a>
+                <p class="text-xs text-stone-400 mt-4">將在新分頁中開啟 Google 文件</p>
             </div>
         </section>
 
@@ -427,7 +442,7 @@
             });
             
             // Close mobile menu on link click
-            const mobileLinks = mobileMenu.querySelectorAll('a');
+            const mobileLinks = document.querySelectorAll('#mobile-menu a');
             mobileLinks.forEach(link => {
                 link.addEventListener('click', () => {
                     mobileMenu.classList.add('hidden');
